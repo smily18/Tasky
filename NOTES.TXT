@@ -1,0 +1,449 @@
+FLEX BOX
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <link rel="stylesheet" href="style.css">
+    <title>First project</title>
+  </head>
+  <body>
+    <div class="parent">
+      <div class="child"></div>
+      <div class="child"></div>
+    </div>
+  </body>
+</html>
+
+body{
+  background-color: #000;
+  padding:200px;
+}
+.parent{
+  background-color: #fff;
+  width: 100%;
+  height: 500px;
+  display: flex;
+  gap:5px;
+  flex-wrap: wrap;
+  justify-content: space-;
+}
+.child{
+  background-color: #4E9F3D;
+  width: 200px;
+  height: 200px;
+}
+
+----------------------------------------------------------------------------------------------------------------------------
+
+24.11.2021 - intro to express
+
+const express = require("express");
+
+//Initialise
+const alfredthebutler = express();
+
+alfredthebutler.use(express.json());
+
+//HTTP METHODS
+//GET -> To retrive a data
+//POST -> Tosend a data to server
+//PUT -> To update an existing data
+//DELETE -> To delete an existing data
+
+alfredthebutler.get("/", (request, response) => {
+  //complex logic
+  return response.json({data: "Hello Guys!"});
+});
+//users/3
+alfredthebutler.get("/users/:id", (req,res) => {
+  const users = [
+    {
+      id: 1,
+      name: "Aradhana"
+    },
+    {
+      id: 2,
+      name: "Puja"
+    },
+    {
+      id: 3,
+      name: "Shivam"
+    }
+  ];
+
+  let userId = req.params.id;
+  console.log(userId);
+  const getUser = users.filter((user) => user.id === parseInt(userId));
+
+  return res.json({data: getUser});
+});
+
+alfredthebutler.listen(3000, () => console.log("The server is up and running"));
+
+--------------------------------------------------------------------------------------------------------------------------------
+
+BOOK API BACKUP CODE (WITHOUT MONGOOSE)
+
+require("dotenv").config();
+const express = require("express");
+const mongoose = require("mongoose");
+var bodyParser = require("body-parser")
+
+//Database
+const database = require("./database");
+
+//Models
+const BookModel = require("./database/book");
+const AuthorModel = require("./database/author");
+const PublicationModel = require("./database/publication");
+
+//Initialize express
+const booky = express();
+booky.use(bodyParser.urlencoded({extended: true}));
+booky.use(bodyParser.json());
+
+//establish database connection
+mongoose.connect(
+  process.env.MONGO_URL
+).then(()=> console.log("Connection Established"));
+
+//ROOT ROUTE
+/*
+Route           /
+Description     WELCOME PAGE
+Access          Public
+Parameter       NONE
+Methods         GET
+*/
+booky.get("/", (req,res) => {
+  return res.json({data:"HELLO EVERYONE"});
+});
+
+//GET ALL BOOKS
+/*
+Route           /books
+Description     Get all books
+Access          Public
+Parameter       NONE
+Methods         GET
+
+*/
+booky.get("/books", async(req,res) => {
+  const getAllBooks = await BookModel.find();
+  return res.json(getAllBooks);
+});
+
+//GET A SPECIFIC BOOK localhost:3000/12345Book
+/*
+Route           /is
+Description     Get specific book
+Access          Public
+Parameter       isbn
+Methods         GET
+*/
+booky.get("/books/isbn/:isbn", (req,res) => {
+  const getSpecificBook = await BookModel.fineOne({ISBN:req.params.isbn});
+
+  if(!getSpecificBook) {
+    return res.json({
+      error: `No book found for ISBN of ${req.params.isbn}`
+    });
+  }
+
+  return res.json({book: getSpecificBook});
+
+});
+
+//GET Books on Specific Category
+/*
+Route           /c/
+Description     Get specific book by Category
+Access          Public
+Parameter       category
+Methods         GET
+*/
+booky.get("/books/category/:category", (req,res) => {
+  const getSpecificBook = database.books.filter(
+    (book) => book.category.includes(req.params.category)
+  );
+
+  if(getSpecificBook.length === 0) {
+    return res.json({
+      error: `No book found for category of ${req.params.category}`
+    });
+  }
+
+  return res.json({book: getSpecificBook});
+
+});
+
+//GET Books on Specific Language
+/*
+Route           /books/language
+Description     Get specific book by language
+Access          Public
+Parameter       language
+Methods         GET
+*/
+booky.get("/books/language/:lang", (req,res) => {
+  const getSpecificBook = database.books.filter(
+    (book) => book.language == req.params.lang
+  );
+
+  if(getSpecificBook.length === 0) {
+    return res.json({
+      error: `No book found for language of ${req.params.lang}`
+    });
+  }
+
+  return res.json({book: getSpecificBook});
+
+});
+
+//GET ALL AUTHORS
+/*
+Route           /authors
+Description     Get all authors
+Access          Public
+Parameter       NONE
+Methods         GET
+*/
+booky.get("/authors", (req,res) => {
+  return res.json({authors: database.authors});
+});
+
+//GET ALL SPECIFIC AUTHORS
+/*
+Route           /authors/id
+Description     Get specific authors
+Access          Public
+Parameter       id
+Methods         GET
+*/
+booky.get("/authors/id/:id", (req,res) => {
+  const getSpecificAuthor = database.authors.filter(
+    (author) => author.id == req.params.id
+  );
+
+  if(getSpecificAuthor.length===0){
+    return res.json({
+       error:`No author found for id of ${req.params.id}`
+    });
+  }
+  return res.json({Authors:getSpecificAuthor});
+});
+
+//GET ALL AUTHORS BASED ON BOOKS
+/*
+Route           /authors/book
+Description     Get all authors based on books
+Access          Public
+Parameter       isbn
+Methods         GET
+*/
+booky.get("/authors/book/:isbn", (req,res) => {
+  const getSpecificAuthor = database.authors.filter(
+    (author) => author.books.includes(req.params.isbn)
+  );
+
+  if(getSpecificAuthor.length===0){
+    return res.json({
+       error:`No author found for isbn of ${req.params.isbn}`
+    });
+  }
+  return res.json({Authors:getSpecificAuthor});
+});
+
+//GET ALL PUBLICATIONS
+/*
+Route           /publications
+Description     Get all publications
+Access          Public
+Parameter       NONE
+Methods         GET
+*/
+booky.get("/publications", (req,res) => {
+  return res.json({publications: database.publications});
+});
+
+//GET SPECIFIC PUBLICATIONS
+/*
+Route           /publications/id
+Description     Get specific authors
+Access          Public
+Parameter       id
+Methods         GET
+*/
+
+booky.get("/publications/id/:id", (req,res)=>{
+  const getSpecificPublication = database.publications.filter(
+    (publication) => publication.id == req.params.id
+  );
+
+  if(getSpecificPublication.length === 0){
+    return res.json({
+      error:`No publication found for the id ${req.params.id}`
+    });
+  }
+
+  return res.json({publications:getSpecificPublication});
+});
+
+//GET ALL PUBLICATIONS BASED ON BOOKS
+/*
+Route           /publications/book
+Description     Get all publications based on books
+Access          Public
+Parameter       isbn
+Methods         GET
+*/
+booky.get("/publications/book/:isbn", (req,res) => {
+  const getSpecificPublication = database.publications.filter(
+    (publication) => publication.books.includes(req.params.isbn)
+  );
+
+  if(getSpecificPublication.length===0){
+    return res.json({
+       error:`No publications found for isbn of ${req.params.isbn}`
+    });
+  }
+  return res.json({Publications:getSpecificPublication});
+});
+
+//POST REQUEST
+//ADD NEW BOOKS
+/*
+Route           /books/new
+Description     add new book
+Access          Public
+Parameter       NONE
+Methods         POST
+*/
+booky.post("/books/new", (req,res)=>{
+  const newBook=req.body;
+  database.books.push(newBook);
+  return res.json({UpdatedBooks:database.books});
+});
+
+//ADD NEW AUTHORS
+/*
+Route           /authors/new
+Description     add new authors
+Access          Public
+Parameter       NONE
+Methods         POST
+*/
+booky.post("/authors/new", (req,res)=>{
+  const newAuthors=req.body;
+  database.authors.push(newAuthors);
+  return res.json({UpdatedAuthors:database.authors});
+});
+
+//ADD NEW PUBLICATIONS
+/*
+Route           /publications/new
+Description     add new publications
+Access          Public
+Parameter       NONE
+Methods         POST
+*/
+booky.post("/publications/new", (req,res)=>{
+  const newPublications=req.body;
+  database.publications.push(newPublications);
+  return res.json({UpdatedPublications:database.publications});
+});
+
+//UPDATE PUB AND BOOK
+/*
+Route           /publications/update/book
+Description     update the pub and book
+Access          Public
+Parameter       isbn
+Methods         PUT
+*/
+booky.put("/publications/update/book/:isbn",(req,res)=>
+  //UPDATE THE PUB
+  {
+  database.publications.forEach((pub) => {
+    if(pub.id === req.body.pubId){
+      return pub.books.push(req.params.isbn);
+    }
+  });
+
+  //UPDATE THE BOOK
+  database.books.forEach((book)=>{
+    if(book.ISBN === req.params.isbn){
+      book.publications = req.body.pubId;
+      return;
+    }
+  });
+
+  return res.json(
+    {
+        books:database.books,
+        publications:database.publications,
+        message:"Succesfully Updated!"
+    }
+  );
+});
+
+//DELETE BOOK
+/*
+Route           /books/delete
+Description     delete book
+Access          Public
+Parameter       isbn
+Methods         DELETE
+*/
+booky.delete("/books/delete/:isbn",(req,res)=>{
+  const updateBook = database.books.filter(
+    (book)=> book.ISBN != req.params.isbn
+  );
+
+  database.books = updateBook;
+
+  return res.json({books: database.books});
+});
+
+//DELETE AUTHOR FROM A BOOK AND VICE VERSA
+/*
+Route           /books/delete/author
+Description     delete an author from a book and vice versa
+Access          Public
+Parameter       isbn, authorId
+Methods         DELETE
+*/
+booky.delete("/books/delete/author/:isbn/:authorId",(req,res)=>{
+  //UPDATE THE BOOK DB
+  database.books.forEach((book) => {
+    if(book.ISBN === req.params.isbn){
+      const newAuthorList = book.author.filter(
+        (eachAuthor)=> eachAuthor !=parseInt(req.params.authorId)
+      );
+      book.author= newAuthorList;
+      return;
+    }
+  });
+
+  //UPDATE AUTHOR DB
+  database.authors.forEach((eachAuthor) => {
+    if(eachAuthor.id === parseInt(req.params.authorId)){
+      const newBookList = eachAuthor.books.filter(
+        (book)=> book !=req.params.isbn
+      );
+      eachAuthor.books= newBookList;
+      return;
+    }
+  });
+
+  return res.json({
+    books:database.books,
+    authors:database.authors,
+    message:"Succesfully Updated!"
+  })
+});
+
+booky.listen(3000,() => console.log("Server is up and running!!!"));
+
